@@ -1,3 +1,4 @@
+import { Analytics  } from '@vercel/analytics/react'
 import { StateContext } from '@/context/stateContext'
 import Navbar from '@/components/Navbar'
 import { Amiri } from 'next/font/google'
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
             {children}
           </main>
         </StateContext>
+        <Analytics />
       </body>
     </html>
   )
