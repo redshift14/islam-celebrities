@@ -1,0 +1,34 @@
+.main {
+  padding: 20px 60px 60px 60px;
+}
+.main div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.btn {
+  font-size: 18px;
+  color: var(--color);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+}
+.btn:hover {
+  background-color: var(--input-bg);
+}
+.main h1 {
+  font-size: 38px;
+}
+.main p {
+  font-size: 18px;
+  line-height: 35px;
+}
+
+@media only screen and (max-width: 650px) {
+  .main {
+    padding: 20px 20px 60px 20px;
+  }
+}

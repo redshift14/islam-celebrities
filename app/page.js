@@ -1,95 +1,69 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+import { connectToDB } from '@/utils/connectDB'
+import Home from '@/components/Home'
 
-export default function Home() {
+const getData = async (perPage, page, search) => {
+  
+  try {
+    const client = await connectToDB()
+    const db = client.db('persons')
+
+    const collection = db.collection('persons')
+    const skip = (page - 1) * perPage
+    const limit = perPage
+
+    const pipleline = [{ $skip: skip }, { $limit: limit }]
+
+    if (search) {
+      pipleline.pop()
+      pipleline.unshift({
+        $search: {
+          index: 'default',
+          text: {
+            query: search,
+            fuzzy: {
+              maxEdits: 1,
+              prefixLength: 3,
+              maxExpansions: 50,
+            },
+            path: 'name'
+          }
+        }
+      }, 
+      {
+        $limit: 20
+      })
+    }
+
+    const persons = await collection.aggregate(pipleline).toArray()
+    const itemsCount = await collection.countDocuments()
+
+    const res = { persons, itemsCount }
+    return res
+  }
+  catch (err) {
+    throw new Error('Failed to fetch data')
+  }
+}
+
+const HomePage = async ({ searchParams }) =>  {
+
+  let page = parseInt(searchParams.page, 10)
+  page = !page || page < 1 ? 1 : page
+
+  const perPage = 10
+
+  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined
+
+  const data = await getData(perPage, page, search)
+
+  const totalPages = Math.ceil(data.itemsCount / perPage)
+
+  const prevPage = page - 1 > 0 ? page - 1 : 1
+  const nextPage = page + 1 
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <Home persons={data} nextPage={nextPage} prevPage={prevPage} totalPages={totalPages} page={page} search={search} />
   )
 }
+
+export default HomePage
